@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Catch the Fruit Game</title>
+  <style>
+    body { margin: 0; background: #1a1a2e; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Arial, sans-serif; }
+    canvas { border: 3px solid #00d2d3; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 210, 211, 0.4); }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="600" height="500"></canvas>
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+let score = 0, level = 1, gameState = 'START';
+const levelColors = ['#2c3e50', '#16a085', '#8e44ad', '#d35400', '#c0392b'];
+const paddle = { width: 110, height: 15, x: (canvas.width - 110) / 2, y: canvas.height - 30, speed: 8, dx: 0 };
+const fruit = { x: Math.random() * (canvas.width - 30), y: 0, size: 30, baseSpeed: 4 };
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") paddle.dx = -paddle.speed;
+  if (e.key === "ArrowRight") paddle.dx = paddle.speed;
+  if (e.key === " " && gameState === 'START') resetGame();
+  if ((e.key === "r" || e.key === "R") && gameState === 'GAMEOVER') resetGame();
+});
+document.addEventListener("keyup", (e) => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") paddle.dx = 0; });
+
+function resetGame() { score = 0; level = 1; fruit.y = 0; fruit.x = Math.random() * (canvas.width - fruit.size); paddle.x = (canvas.width - paddle.width) / 2; gameState = 'PLAYING'; }
+
+function update() {
+  if (gameState !== 'PLAYING') return;
+  paddle.x += paddle.dx;
+  if (paddle.x < 0) paddle.x = 0;
+  if (paddle.x + paddle.width > canvas.width) paddle.x = canvas.width - paddle.width;
+  fruit.y += fruit.baseSpeed + (level * 1.5);
+  if (fruit.y + fruit.size >= paddle.y && fruit.x + fruit.size >= paddle.x && fruit.x <= paddle.x + paddle.width) {
+    score++; fruit.y = 0; fruit.x = Math.random() * (canvas.width - fruit.size);
+    if (score === level * 10) {
+      gameState = 'LEVEL_PASS';
+      setTimeout(() => { level++; fruit.y = 0; gameState = 'PLAYING'; }, 2000);
+    }
+  }
+  if (fruit.y > canvas.height) gameState = 'GAMEOVER';
+}
+
+function draw() {
+  ctx.fillStyle = levelColors[Math.min(level - 1, levelColors.length - 1)];
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (gameState === 'START') {
+    ctx.fillStyle = "#f1c40f"; ctx.font = "bold 32px Arial"; ctx.textAlign = "center";
+    ctx.fillText("CATCH THE FRUIT GAME", canvas.width / 2, 200);
+    ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial";
+    ctx.fillText("Press SPACE BAR to Start Game", canvas.width / 2, 260);
+  } else if (gameState === 'PLAYING') {
+    ctx.fillStyle = "#3498db"; ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.font = "30px Arial"; ctx.fillText("🍎", fruit.x, fruit.y + 25);
+    ctx.fillStyle = "#ffffff"; ctx.font = "bold 18px Arial"; ctx.textAlign = "left";
+    ctx.fillText(`Score: ${score} / ${level * 10}  |  Level: ${level}`, 15, 30);
+  } else if (gameState === 'LEVEL_PASS') {
+    ctx.fillStyle = "#2ecc71"; ctx.font = "bold 30px Arial"; ctx.textAlign = "center";
+    ctx.fillText(`CONGRATULATIONS! LEVEL ${level} PASSED!`, canvas.width / 2, 220);
+    ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial"; ctx.fillText("Next Level Starting Soon...", canvas.width / 2, 270);
+  } else if (gameState === 'GAMEOVER') {
+    ctx.fillStyle = "#e74c3c"; ctx.font = "bold 36px Arial"; ctx.textAlign = "center";
+    ctx.fillText("GAME OVER!", canvas.width / 2, 180);
+    ctx.fillStyle = "#ffffff"; ctx.font = "20px Arial"; ctx.fillText(`Your Total Score: ${score}`, canvas.width / 2, 230);
+    ctx.fillStyle = "#f1c40f"; ctx.fillText("Press 'R' to Restart from Level 1", canvas.width / 2, 280);
+  }
+}
+function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+gameLoop();
+</script>
+</body>
+</html>
